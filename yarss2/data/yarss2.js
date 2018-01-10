@@ -1,4 +1,8 @@
 
+function cloneArray(data) {
+    return JSON.parse(JSON.stringify(data))
+}
+
 Ext.ns('Deluge.ux');
 
 Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
@@ -221,6 +225,7 @@ Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
             }]
         });
 
+        // TODO: remove
         window.cacatEdit = this
     },
 
@@ -306,12 +311,27 @@ Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
     processWebToCore: function(subscription) {
         var targets
 
+        data = cloneArray(subscription)
+
+        targets = [
+            'max_download_speed',
+            'max_upload_speed',
+            'max_connections',
+            'max_upload_slots',
+        ]
+        for (var i = targets.length - 1; i >= 0; i--) {
+            data[targets[i]] = parseInt(data[targets[i]])
+            if( data[targets[i]] < -1 ) {
+                data[targets[i]] = -1
+            }
+        }
+
         targets = [
             'regex_include_ignorecase',
             'regex_exclude_ignorecase',
         ]
         for (var i = targets.length - 1; i >= 0; i--) {
-            subscription[targets[i]] = !subscription[targets[i]]
+            data[targets[i]] = !data[targets[i]]
         }
 
         targets = [
@@ -321,29 +341,43 @@ Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
             'prioritize_first_last_pieces',
         ]
         for (var i = targets.length - 1; i >= 0; i--) {
-            if( ['True','true',true].indexOf[subscription[targets[i]]] != -1 ) {
-                subscription[targets[i]] = 'True'
+            if( ['True','true',true].indexOf[data[targets[i]]] != -1 ) {
+                data[targets[i]] = true
             }
-            if( ['False','false',false].indexOf[subscription[targets[i]]] != -1 ) {
-                subscription[targets[i]] = 'False'
+            if( ['False','false',false].indexOf[data[targets[i]]] != -1 ) {
+                data[targets[i]] = false
             }
-            else if( subscription[targets[i]] !== 'Default' ) {
-                alert('Yarss2SubscriptionWindowBase::processWebToCore(): Invalid value for "'+targets[i]+'" = "'+subscription[targets[i]]+'" ('+typeof(subscription[targets[i]])+')')
+            else if( data[targets[i]] !== 'Default' ) {
+                alert('Yarss2SubscriptionWindowBase::processWebToCore(): Invalid value for "'+targets[i]+'" = "'+data[targets[i]]+'" ('+typeof(data[targets[i]])+')')
             }
         }
 
-        return subscription
+        return data
     },
 
     processCoreToWeb: function(subscription) {
         var targets
 
+        data = cloneArray(subscription)
+
+        targets = [
+            'max_download_speed',
+            'max_upload_speed',
+            'max_connections',
+            'max_upload_slots',
+        ]
+        for (var i = targets.length - 1; i >= 0; i--) {
+            if( data[targets[i]] < -1 ) {
+                data[targets[i]] = -1
+            }
+        }
+
         targets = [
             'regex_include_ignorecase',
             'regex_exclude_ignorecase',
         ]
         for (var i = targets.length - 1; i >= 0; i--) {
-            subscription[targets[i]] = !subscription[targets[i]]
+            data[targets[i]] = !data[targets[i]]
         }
 
         targets = [
@@ -353,12 +387,24 @@ Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
             'prioritize_first_last_pieces',
         ]
         for (var i = targets.length - 1; i >= 0; i--) {
-            if( subscription[targets[i]] === 'True' ) {
-                subscription[targets[i]] = true
+            if( data[targets[i]] === 'True' ) {
+                data[targets[i]] = true
             }
-            else if( subscription[targets[i]] === 'False' ) {
-                subscription[targets[i]] = false
+            else if( data[targets[i]] === 'False' ) {
+                data[targets[i]] = false
             }
+        }
+
+        return data
+    },
+
+    getFormData: function(withKey) {
+        var subscription = this.form.getForm().getValues()
+        subscription['active'] = true
+        subscription['rssfeed_key'] = this.form.getForm().getFieldValues()['rssfeed_key']
+
+        if( withKey ) {
+            subscription['key'] = this.key
         }
 
         return subscription
@@ -387,25 +433,31 @@ Deluge.ux.EditYarss2SubscriptionWindow = Ext.extend(Deluge.ux.Yarss2Subscription
         this.config = config
         this.setDefaults()
 
+        // TODO: remove
         console.log('subscription', subscription)
         this.loadSubscription(subscription['key'])
     },
 
     loadSubscription: function(key) {
-        this.key = key
+        this.key = parseInt(key)
         subscription = this.config['subscriptions'][key]
 
         this.form.getForm().setValues(this.processCoreToWeb(this.config['subscriptions'][key]));
     },
 
     onSaveClick: function() {
-        var values = this.form.getForm().getFieldValues();
-        // deluge.client.execute.save_subscription(this.subscription.id, values.event, values.subscription, {
-        //     success: function() {
-        //         this.fireEvent('subscriptionedit', this, values.event, values.subscription);
-        //     },
-        //     scope: this
-        // });
+        var subscription = this.getFormData(true)
+
+        console.log('edit subscription', subscription)
+        subscription = this.processWebToCore(subscription)
+        console.log('edit subscription processed', subscription)
+
+        deluge.client.yarss2.save_subscription(subscription['key'], subscription, false, {
+            success: function() {
+                this.fireEvent('subscriptionedit', this);
+            },
+            scope: this
+        });
         this.hide();
     }
 
@@ -431,13 +483,18 @@ Deluge.ux.AddYarss2SubscriptionWindow = Ext.extend(Deluge.ux.Yarss2SubscriptionW
     },
 
     onSaveClick: function() {
-        var values = this.form.getForm().getFieldValues();
-        // deluge.client.execute.save_subscription(this.subscription.id, values.event, values.subscription, {
-        //     success: function() {
-        //         this.fireEvent('subscriptionadd', this, values.event, values.subscription);
-        //     },
-        //     scope: this
-        // });
+        var subscription = this.getFormData(false)
+
+        console.log('add subscription', subscription)
+        subscription = this.processWebToCore(subscription)
+        console.log('add subscription processed', subscription)
+
+        deluge.client.yarss2.save_subscription(null, subscription, false, {
+            success: function() {
+                this.fireEvent('subscriptionadd', this);
+            },
+            scope: this
+        });
         this.hide();
     }
 
@@ -604,6 +661,12 @@ Deluge.ux.preferences.Yarss2Page = Ext.extend(Ext.Panel, {
                 for (var i in config["subscriptions"]) {
                     var subscription = config["subscriptions"][i]
                     var feed = config["rssfeeds"][ subscription["rssfeed_key"] ]
+                    if( typeof(feed) == 'undefined' ) {
+                        feed = {
+                            name: 'UNDEFINED',
+                            site: 'UNDEFINED',
+                        }
+                    }
 
                     data.push([
                         subscription["active"],
@@ -616,6 +679,7 @@ Deluge.ux.preferences.Yarss2Page = Ext.extend(Ext.Panel, {
                         ])
                 }
 
+                // TODO: remove
                 console.log("subscriptions", data)
                 this.getStore().loadData(data);
                 if (this.viewReady) {
@@ -800,6 +864,7 @@ Deluge.ux.preferences.Yarss2Page = Ext.extend(Ext.Panel, {
                         ])
                 }
 
+                // TODO: remove
                 console.log("feeds", data)
                 this.getStore().loadData(data);
                 if (this.viewReady) {
@@ -874,6 +939,7 @@ Deluge.ux.preferences.Yarss2Page = Ext.extend(Ext.Panel, {
 
         this.on('show', this.onPreferencesShow, this);
 
+        // TODO: remove
         window.cacat = this
     },
 
@@ -885,6 +951,7 @@ Deluge.ux.preferences.Yarss2Page = Ext.extend(Ext.Panel, {
         deluge.client.yarss2.get_config({
             success: function(config) {
                 this.config = config;
+                // TODO: remove
                 console.log('config',config)
                 this.subscriptionsList.loadData(config);
                 this.feedsList.loadData(config);
