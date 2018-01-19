@@ -147,8 +147,45 @@ class YARSSConfig(object):
             else:
                 dict_key = data_dict["key"]
 
+        # Assure special var types
+        if config_name == 'subscriptions':
+            for field in [
+                'add_torrents_in_paused_state',
+                'auto_managed',
+                'sequential_download',
+                'prioritize_first_last_pieces',
+                ]:
+
+                # Set DEFAULT if not provided
+                if field not in data_dict:
+                    data_dict[field] = GeneralSubsConf.DEFAULT
+                    continue
+
+                self.log.warn(" >> ["+field+"] BEFORE - ("+str(type(data_dict[field]))+") "+str(data_dict[field]))
+
+                # Treat BOOL
+                if type(data_dict[field]) is bool:
+                    if data_dict[field] is True:
+                        data_dict[field] = GeneralSubsConf.ENABLED
+                    else:
+                        data_dict[field] = GeneralSubsConf.DISABLED
+
+                # Treat STRING
+                elif type(data_dict[field]) is str:
+                    if data_dict[field] == 'True':
+                        data_dict[field] = GeneralSubsConf.ENABLED
+                    elif data_dict[field] == 'False':
+                        data_dict[field] = GeneralSubsConf.DISABLED
+                    else:
+                        data_dict[field] = GeneralSubsConf.DEFAULT
+
+                self.log.warn(" >> ["+field+"] AFTER - ("+str(type(data_dict[field]))+") "+str(data_dict[field]))
+
         config[dict_key] = data_dict
+        self.config[config_name][dict_key] = data_dict
         self.config.save()
+
+        # self.log.warn(" >>>>>>>>>>> "+str(self.config[config_name][dict_key]))
         return self.config.config
 
     def _verify_config(self):

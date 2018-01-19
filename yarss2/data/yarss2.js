@@ -313,6 +313,7 @@ Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
 
         data = cloneArray(subscription)
 
+        // Assure INT
         targets = [
             'max_download_speed',
             'max_upload_speed',
@@ -326,6 +327,7 @@ Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
             }
         }
 
+        // Reverse BOOL
         targets = [
             'regex_include_ignorecase',
             'regex_exclude_ignorecase',
@@ -334,23 +336,24 @@ Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
             data[targets[i]] = !data[targets[i]]
         }
 
-        targets = [
-            'add_torrents_in_paused_state',
-            'auto_managed',
-            'sequential_download',
-            'prioritize_first_last_pieces',
-        ]
-        for (var i = targets.length - 1; i >= 0; i--) {
-            if( ['True','true',true].indexOf[data[targets[i]]] != -1 ) {
-                data[targets[i]] = true
-            }
-            if( ['False','false',false].indexOf[data[targets[i]]] != -1 ) {
-                data[targets[i]] = false
-            }
-            else if( data[targets[i]] !== 'Default' ) {
-                alert('Yarss2SubscriptionWindowBase::processWebToCore(): Invalid value for "'+targets[i]+'" = "'+data[targets[i]]+'" ('+typeof(data[targets[i]])+')')
-            }
-        }
+        // String / String BOOL
+        // targets = [
+        //     'add_torrents_in_paused_state',
+        //     'auto_managed',
+        //     'sequential_download',
+        //     'prioritize_first_last_pieces',
+        // ]
+        // for (var i = targets.length - 1; i >= 0; i--) {
+        //     if( ['True','true',true].indexOf(data[targets[i]]) != -1 ) {
+        //         data[targets[i]] = 'True'
+        //     }
+        //     else if( ['False','false',false].indexOf(data[targets[i]]) != -1 ) {
+        //         data[targets[i]] = 'False'
+        //     }
+        //     else if( data[targets[i]] !== 'Default' ) {
+        //         alert('Yarss2SubscriptionWindowBase::processWebToCore(): Invalid value for "'+targets[i]+'" = "'+data[targets[i]]+'" ('+typeof(data[targets[i]])+')')
+        //     }
+        // }
 
         return data
     },
@@ -360,6 +363,7 @@ Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
 
         data = cloneArray(subscription)
 
+        // INT
         targets = [
             'max_download_speed',
             'max_upload_speed',
@@ -372,6 +376,7 @@ Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
             }
         }
 
+        // Reverse BOOL
         targets = [
             'regex_include_ignorecase',
             'regex_exclude_ignorecase',
@@ -380,20 +385,21 @@ Deluge.ux.Yarss2SubscriptionWindowBase = Ext.extend(Ext.Window, {
             data[targets[i]] = !data[targets[i]]
         }
 
-        targets = [
-            'add_torrents_in_paused_state',
-            'auto_managed',
-            'sequential_download',
-            'prioritize_first_last_pieces',
-        ]
-        for (var i = targets.length - 1; i >= 0; i--) {
-            if( data[targets[i]] === 'True' ) {
-                data[targets[i]] = true
-            }
-            else if( data[targets[i]] === 'False' ) {
-                data[targets[i]] = false
-            }
-        }
+        // String / String BOOL
+        // targets = [
+        //     'add_torrents_in_paused_state',
+        //     'auto_managed',
+        //     'sequential_download',
+        //     'prioritize_first_last_pieces',
+        // ]
+        // for (var i = targets.length - 1; i >= 0; i--) {
+        //     if( data[targets[i]] === 'True' ) {
+        //         data[targets[i]] = true
+        //     }
+        //     else if( data[targets[i]] === 'False' ) {
+        //         data[targets[i]] = false
+        //     }
+        // }
 
         return data
     },

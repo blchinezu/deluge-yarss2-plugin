@@ -18,6 +18,7 @@ from yarss2.util.http import get_matching_cookies_dict
 from yarss2.util.yarss_email import send_torrent_email
 from yarss2.yarss_config import YARSSConfig, get_user_agent
 
+import json
 
 class Core(CorePluginBase):
 
@@ -77,17 +78,32 @@ class Core(CorePluginBase):
         """Saves the subscription in subscription_data.
         If subscription_data is None and delete=True, delete subscription with key==dict_key
         """
-        if delete:
-            if subscription_data is not None:
-                self.log.warn("save_subscription called with delete=True, but rssfeed_data is not None!")
-            else:
-                self.log.info("Deleting Subscription '%s'" %
-                              self.yarss_config.get_config()["subscriptions"][dict_key]["name"])
-        try:
-            return self.yarss_config.generic_save_config("subscriptions", dict_key=dict_key,
-                                                         data_dict=subscription_data, delete=delete)
-        except ValueError as (v):
-            self.log.error("Failed to save subscription:" + str(v))
+
+        with open('/home/brucelee/Desktop/asdf.js', 'w') as f:
+            f.write("\n==================================\n\n>>> INITIAL CONFIG:\n")
+            f.write(json.dumps(self.yarss_config.config.config['subscriptions']['5'], sort_keys=True, indent=4, separators=(',', ': ')))
+
+            f.write("\n==================================\n\n>>> subscription_data:\n")
+            f.write(json.dumps(subscription_data, sort_keys=True, indent=4, separators=(',', ': ')))
+
+            if delete:
+                if subscription_data is not None:
+                    self.log.warn("save_subscription called with delete=True, but rssfeed_data is not None!")
+                else:
+                    self.log.info("Deleting Subscription '%s'" %
+                                  self.yarss_config.get_config()["subscriptions"][dict_key]["name"])
+            try:
+                asdf = self.yarss_config.generic_save_config("subscriptions", dict_key=dict_key,
+                                                             data_dict=subscription_data, delete=delete)
+
+                f.write("\n==================================\n\n>>> NEW CONFIG:\n")
+                f.write(json.dumps(self.yarss_config.config.config['subscriptions']['5'], sort_keys=True, indent=4, separators=(',', ': ')))
+
+                return asdf
+            except ValueError as (v):
+                self.log.error("Failed to save subscription:" + str(v))
+
+
         return None
 
     @export
